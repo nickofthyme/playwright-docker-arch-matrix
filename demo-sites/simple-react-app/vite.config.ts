@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-import { simpleReactApp } from '../constants'
+import { host, simpleReactApp } from '../constants'
 
 export default defineConfig({
   plugins: [
@@ -11,6 +11,7 @@ export default defineConfig({
   ],
   base: simpleReactApp.basePath,
   server: {
+    host,
     port: simpleReactApp.proxyPort,
   },
 });

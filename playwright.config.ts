@@ -1,17 +1,23 @@
 import { defineConfig, devices } from '@playwright/test';
 import { baseURL } from './demo-sites/constants';
 
+const CI = process.env.CI === 'true';
+
+console.log(`process.env.CI = ${CI} (${typeof CI})`);
+console.log(`baseURL = ${baseURL}`);
+console.log(`process.env.HOST = ${process.env.HOST}`);
+
 export default defineConfig({
   testDir: './e2e/tests',
   snapshotDir: 'e2e/screenshots',
   outputDir: 'e2e/test-failures',
 
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 1,
+  forbidOnly: CI,
+  retries: CI ? 2 : 1,
   timeout: 10 * 1000,
   preserveOutput: 'failures-only',
-  workers: process.env.CI ? 1 : undefined,
+  workers: CI ? 1 : undefined,
 
   reporter: [
     ['list'],
@@ -35,7 +41,7 @@ export default defineConfig({
       maxDiffPixelRatio: 0,
       maxDiffPixels: 0,
       animations: "disabled",
-      pathTemplate: '{snapshotDir}/{testFilePath}/{testName}-{projectName}{ext}',
+      pathTemplate: '{snapshotDir}/{testFilePath}/{testName}-{projectName}-{platform}{ext}',
     },
   },
 
@@ -59,9 +65,9 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: process.env.CI ? {
+  webServer: CI ? {
     command: 'npm start',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    url: baseURL,
+    reuseExistingServer: false,
   } : undefined,
 });

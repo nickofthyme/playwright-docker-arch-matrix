@@ -1,7 +1,14 @@
 import express from 'express';
 import path from 'path';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { port, baseURL, playwrightDev, simpleReactApp } from './constants';
+import { host, port, baseURL, playwrightDev, simpleReactApp } from './constants';
+
+
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 
@@ -15,7 +22,7 @@ app.get(RegExp(`${playwrightDev.basePath}(.*)`), (req, res) => {
 app.use(
   simpleReactApp.basePath,
   createProxyMiddleware({
-    target: 'http://localhost:5173/simple-react-app/',
+    target: `http://${host}:${simpleReactApp.proxyPort}${simpleReactApp.basePath}/`,
     changeOrigin: true,
   })
 );
