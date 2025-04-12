@@ -1,0 +1,115 @@
+name: Playwright Visual Regression Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+  workflow_dispatch:
+    inputs:
+      runnerTarget:
+        description: "Runner target"
+        required: false
+        type: choice
+        options:
+          - ubuntu-24.04
+          - windows-2025
+          - ubuntu-24.04-arm
+          - macos-13
+          - macos-15
+
+permissions:
+  contents: write
+
+env:
+  RUNNER_TARGET: ${{ inputs.runnerTarget }}
+
+jobs:
+  test:
+    name: 'Screenshot testing - ${{ matrix.runner }} - ${{ matrix.project }}'
+    timeout-minutes: 60
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: true
+      # matrix:
+      #   project: [ Chromium, Firefox, Webkit ]
+      #   runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
+      matrix:
+        project: [ Chromium ]
+        runner: [ ubuntu-24.04 ]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install main dependencies
+      run: npm ci
+    - name: Install react-app dependencies
+      working-directory: demo-sites/simple-react-app
+      run: npm ci
+    - name: Install Playwright Browsers
+      run: npm run playwright:install
+    - name: Run Playwright tests
+      run: npm test --project=${{ matrix.project }}
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-reports-${{ matrix.runner }}-${{ matrix.project }}
+        path: e2e/reports/
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@46
+      with:
+        files: |
+          e2e/screenshots/**
+    - name: List all changed files
+      env:
+        ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+      run: |
+        for file in ${ALL_CHANGED_FILES}; do
+          echo "$file was changed"
+        done
+
+  test-docker:
+    name: 'Screenshot testing - Docker - ${{ matrix.runner }} - ${{ matrix.project }}'
+    timeout-minutes: 60
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: true
+      # matrix:
+      #   project: [ Chromium, Firefox, Webkit ]
+      #   runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
+      matrix:
+        project: [ Chromium ]
+        runner: [ ubuntu-24.04 ]
+    container:
+      image: mcr.microsoft.com/playwright:v1.51.1-noble
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install main dependencies
+      run: npm ci
+    - name: Install react-app dependencies
+      working-directory: demo-sites/simple-react-app
+      run: npm ci
+    - name: Run Playwright tests
+      run: npm test --project=${{ matrix.project }}
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-docker-reports-${{ matrix.runner }}-${{ matrix.project }}
+        path: e2e/reports/
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@46
+      with:
+        files: |
+          e2e/screenshots/**
+    - name: List all changed files
+      env:
+        ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+      run: |
+        for file in ${ALL_CHANGED_FILES}; do
+          echo "$file was changed"
+        done
