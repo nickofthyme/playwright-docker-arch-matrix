@@ -115,11 +115,11 @@ jobs:
       run: echo "$GITHUB_CONTEXT"
     - name: Print environment variables
       run: printenv
+    - name: Install main dependencies
+      run: npm ci
     - name: Test CI env variable
       run: npm run nick
-    # - name: Install main dependencies
-    #   run: npm ci
-    # - name: Install react-app dependencies
+      # - name: Install react-app dependencies
     #   working-directory: demo-sites/simple-react-app
     #   run: npm ci
     # - name: Run Playwright tests
