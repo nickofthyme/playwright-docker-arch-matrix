@@ -38,6 +38,8 @@ env:
 
 jobs:
   test:
+    needs: test-docker
+    if: ${{ success() }}
     name: 'Screenshot testing - ${{ matrix.runner }} - ${{ matrix.project }}'
     timeout-minutes: 60
     runs-on: ${{ matrix.runner }}
@@ -113,28 +115,30 @@ jobs:
       run: echo "$GITHUB_CONTEXT"
     - name: Print environment variables
       run: printenv
-    - name: Install main dependencies
-      run: npm ci
-    - name: Install react-app dependencies
-      working-directory: demo-sites/simple-react-app
-      run: npm ci
-    - name: Run Playwright tests
-      run: npm test -- --project=${{ matrix.project }} --update-snapshots=${{ inputs.updateMode }}
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
-      with:
-        name: playwright-docker-reports-${{ matrix.runner }}-${{ matrix.project }}
-        path: e2e/reports/
-    - name: Get changed files
-      id: changed-files
-      uses: tj-actions/changed-files@v46
-      with:
-        files: |
-          e2e/screenshots/**
-    - name: List all changed files
-      env:
-        ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
-      run: |
-        for file in ${ALL_CHANGED_FILES}; do
-          echo "$file was changed"
-        done
+    - name: Test CI env variable
+      run: npm run nick
+    # - name: Install main dependencies
+    #   run: npm ci
+    # - name: Install react-app dependencies
+    #   working-directory: demo-sites/simple-react-app
+    #   run: npm ci
+    # - name: Run Playwright tests
+    #   run: npm test -- --project=${{ matrix.project }} --update-snapshots=${{ inputs.updateMode }}
+    # - uses: actions/upload-artifact@v4
+    #   if: ${{ !cancelled() }}
+    #   with:
+    #     name: playwright-docker-reports-${{ matrix.runner }}-${{ matrix.project }}
+    #     path: e2e/reports/
+    # - name: Get changed files
+    #   id: changed-files
+    #   uses: tj-actions/changed-files@v46
+    #   with:
+    #     files: |
+    #       e2e/screenshots/**
+    # - name: List all changed files
+    #   env:
+    #     ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+    #   run: |
+    #     for file in ${ALL_CHANGED_FILES}; do
+    #       echo "$file was changed"
+    #     done

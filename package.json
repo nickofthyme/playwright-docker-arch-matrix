@@ -8,6 +8,7 @@
     "start:react": "cd ./demo-sites/simple-react-app && npm start",
     "start:demos": "npm run start:react",
     "start": "npm run start:demos & tsx watch demo-sites/app.ts",
+    "nick": "tsx test.ts",
     "test": "playwright test"
   },
   "dependencies": {
