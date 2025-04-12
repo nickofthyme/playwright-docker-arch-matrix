@@ -93,8 +93,6 @@ jobs:
   test-docker:
     name: 'Screenshot testing - Docker - ${{ matrix.runner }} - ${{ matrix.project }}'
     timeout-minutes: 60
-    env:
-      HOST: "host.docker.internal"
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: true
