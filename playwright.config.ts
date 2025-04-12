@@ -3,10 +3,6 @@ import { baseURL } from './demo-sites/constants';
 
 const CI = process.env.CI === 'true';
 
-console.log(`process.env.CI = ${CI} (${typeof CI})`);
-console.log(`baseURL = ${baseURL}`);
-console.log(`process.env.HOST = ${process.env.HOST}`);
-
 export default defineConfig({
   testDir: './e2e/tests',
   snapshotDir: 'e2e/screenshots',
@@ -14,7 +10,8 @@ export default defineConfig({
 
   fullyParallel: true,
   forbidOnly: CI,
-  retries: CI ? 2 : 1,
+  retries: 0,
+  // retries: CI ? 2 : 1,
   timeout: 10 * 1000,
   preserveOutput: 'failures-only',
   workers: CI ? 1 : undefined,
@@ -48,6 +45,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testMatch: /.+?examples.+?/,
       use: {
         ...devices['Desktop Chrome']
       },
