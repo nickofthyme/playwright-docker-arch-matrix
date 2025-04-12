@@ -1,0 +1,226 @@
+/*
+ * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0 and the Server Side Public License, v 1; you may not use this file except
+ * in compliance with, at your election, the Elastic License 2.0 or the Server
+ * Side Public License, v 1.
+ */
+
+/* eslint-disable no-console */
+
+import { URL } from 'url';
+
+import type { Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
+interface ElementBBox {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+interface ClickOptions {
+  /**
+   * Defaults to `left`.
+   */
+  button?: 'left' | 'right' | 'middle';
+
+  /**
+   * defaults to 1. See [UIEvent.detail].
+   */
+  clickCount?: number;
+
+  /**
+   * Time to wait between `mousedown` and `mouseup` in milliseconds. Defaults to 0.
+   */
+  delay?: number;
+
+  /**
+   * Whether to skip or wait for click delay. Skipping allows capturing of long press actions.
+   *
+   * Defaults to false
+   */
+  waitForDelay?: boolean;
+}
+
+
+interface ScreenshotDOMElementOptions {
+  padding?: number;
+  /**
+   * Screenshot selector override. Used to select beyond set element.
+   */
+  hiddenSelectors?: string[];
+  /**
+   * An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1`. Default is
+   * configurable with `TestConfig.expect`. Unset by default.
+   */
+  maxDiffPixelRatio?: number;
+
+  /**
+   * An acceptable amount of pixels that could be different. Default is configurable with `TestConfig.expect`. Unset by
+   * default.
+   */
+  maxDiffPixels?: number;
+
+  /**
+   * An acceptable perceived color difference in the [YIQ color space](https://en.wikipedia.org/wiki/YIQ) between the same
+   * pixel in compared images, between zero (strict) and one (lax), default is configurable with `TestConfig.expect`.
+   * Defaults to `0.2`.
+   */
+  threshold?: number;
+}
+
+type ScreenshotElementAtUrlOptions = ScreenshotDOMElementOptions & {
+  /**
+   * timeout for waiting on element to appear in DOM
+   *
+   * @defaultValue 10000
+   */
+  timeout?: number;
+  /**
+   * any desired action to be performed after loading url, prior to screenshot
+   */
+  action?: () => void | Promise<void>;
+  /**
+   * Selector used to wait on DOM element
+   */
+  waitSelector?: string;
+  /**
+   * Delay to take screenshot after element is visible
+   */
+  delay?: number;
+  /**
+   * Screenshot selector override. Used to select beyond set element.
+   */
+  screenshotSelector?: string;
+  /**
+   * Path to save screenshot comparisons when calling `toMatchSnapshot`.
+   * Defaults to auto-generated path using test info.
+   */
+  screenshotPath?: string | string[];
+};
+
+
+/**
+ * Toggle element visibility
+ */
+export const toggleElementVisibility = (page: Page) => async (selector: string) => {
+  await page.$$eval(selector, (elements) => {
+    elements.forEach((element) => {
+      element.classList.toggle('echInvisible');
+    });
+  });
+};
+
+/**
+ * Get getBoundingClientRect of selected element
+ */
+export const getBoundingClientRect = (page: Page) => async (selector: string) => {
+  return await page.$eval(selector, (element) => {
+    const { x, y, width, height } = element.getBoundingClientRect();
+    return { left: x, top: y, width, height, id: element.id };
+  });
+};
+
+/**
+ * Capture screenshot Buffer of selected element only
+ */
+export const screenshotDOMElement = (page: Page) => async (selector: string, options?: ScreenshotDOMElementOptions): Promise<Buffer> => {
+  const padding = options?.padding ? options.padding : 0;
+  const rect = await getBoundingClientRect(page)(selector);
+
+  if (options?.hiddenSelectors) {
+    await Promise.all(options.hiddenSelectors.map(toggleElementVisibility(page)));
+  }
+
+  const buffer = await page.screenshot({
+    animations: 'disabled',
+    clip: {
+      x: rect.left - padding,
+      y: rect.top - padding,
+      width: rect.width + padding * 2,
+      height: rect.height + padding * 2,
+    },
+  });
+
+  if (options?.hiddenSelectors) {
+    await Promise.all(options.hiddenSelectors.map(toggleElementVisibility(page)));
+  }
+
+  return buffer;
+};
+
+/**
+ * Expect an element given a url and selector from storybook
+ */
+export const expectElementAtUrlToMatchScreenshot = (page: Page) => async (url: string, selector: string = 'body', options?: ScreenshotElementAtUrlOptions) => {
+  const screenshotPath = options?.screenshotPath;
+  const success = await loadElementFromURL(page)(url, options?.waitSelector ?? selector, options?.timeout);
+
+  expect(success).toBe(true);
+
+  if (options?.action) {
+    await options.action();
+
+    if (options.waitSelector) {
+      // check waitSelector again after any actions
+      await waitForElement(page)(options.waitSelector, options.timeout);
+    }
+  }
+
+  if (options?.delay) {
+    await page.waitForTimeout(options.delay);
+  }
+
+  const element = await screenshotDOMElement(page)(options?.screenshotSelector ?? selector, options);
+
+  expect(element).toBeDefined(); // TODO see why this does NOT fail the test
+
+  if (!element) {
+    throw new Error(`Failed to find element at \`${selector}\`\n\n\t${url}`);
+  } else {
+    expect(element).toMatchSnapshot(screenshotPath, getSnapshotOptions(options));
+  }
+};
+
+  /**
+   * Wait for an element to be on the DOM
+   *
+   * @param {string} [waitSelector] the DOM selector to wait for, default to '.echChartStatus[data-ech-render-complete=true]'
+   * @param {number} [timeout] - the timeout for the operation, default to 1000ms
+   */
+  waitForElement =
+    (page: Page) =>
+      async (waitSelector: string, timeout = 10 * 1000) => {
+        await page.waitForSelector(waitSelector, {
+          state: 'attached',
+          timeout,
+          strict: false, // should be true but some stories have multiple charts
+        });
+      };
+
+  setResizeDimensions = (page: Page) => async (dimensions: { height?: string | number; width?: string | number }) => {
+    const el = page.locator('#story-resize-wrapper');
+    if (!(await el.isVisible())) {
+      throw new Error('setResizeDimensions was called when no #story-resize-wrapper exists');
+    }
+
+    await el.evaluate((element, { height, width }) => {
+      if (height !== undefined) element.style.height = typeof height === 'number' ? `${height}px` : height;
+      if (width !== undefined) element.style.width = typeof width === 'number' ? `${width}px` : width;
+    }, dimensions);
+  };
+
+
+function getSnapshotOptions(options?: ScreenshotDOMElementOptions) {
+  if (options?.maxDiffPixels !== undefined) {
+    // need to clear default options for maxDiffPixels to be respected, else could still fail on threshold or maxDiffPixelRatio
+    return {
+      threshold: 1,
+      maxDiffPixelRatio: 1,
+      ...options,
+    };
+  }
+  return options;
+}
