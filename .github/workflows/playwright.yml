@@ -9,8 +9,10 @@ on:
       runnerTarget:
         description: "Runner target"
         required: false
+        default: " "
         type: choice
         options:
+          - " "
           - ubuntu-24.04
           - windows-2025
           - ubuntu-24.04-arm
