@@ -16,6 +16,16 @@ on:
           - ubuntu-24.04-arm
           - macos-13
           - macos-15
+      updateMode:
+        description: "Runner target"
+        required: false
+        default: none
+        type: choice
+        options:
+          - all
+          - changed
+          - missing
+          - none
 
 permissions:
   contents: write
@@ -41,6 +51,10 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: echo "$GITHUB_CONTEXT"
     - name: Install main dependencies
       run: npm ci
     - name: Install react-app dependencies
@@ -49,7 +63,7 @@ jobs:
     - name: Install Playwright Browsers
       run: npm run playwright:install
     - name: Run Playwright tests
-      run: npm test --project=${{ matrix.project }}
+      run: npm test -- --project=${{ matrix.project }} --update-snapshots=${{ inputs.updateMode }}
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
@@ -88,13 +102,17 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: echo "$GITHUB_CONTEXT"
     - name: Install main dependencies
       run: npm ci
     - name: Install react-app dependencies
       working-directory: demo-sites/simple-react-app
       run: npm ci
     - name: Run Playwright tests
-      run: npm test --project=${{ matrix.project }}
+      run: npm test -- --project=${{ matrix.project }} --update-snapshots=${{ inputs.updateMode }}
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
