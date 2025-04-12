@@ -6,7 +6,7 @@ try {
   env = import.meta.env; // vite env
 }
 
-export const host = env.HOST || 'localhost'
+export const host = env.HOST || '127.0.0.1'
 export const port = 3000
 
 export const simpleReactApp = {
