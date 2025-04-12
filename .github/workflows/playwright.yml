@@ -127,22 +127,3 @@ jobs:
       with:
         name: playwright-docker-reports-${{ matrix.runner }}-${{ matrix.project }}
         path: e2e/reports/
-    - name: Get changed files
-      uses: tj-actions/verify-changed-files@v20
-      id: changed-files
-      with:
-        files: |
-          e2e/screenshots/**
-    - name: Run step only when any of the above files change.
-      if: steps.changed-files.outputs.files_changed == 'true'
-      env:
-        CHANGED_FILES: ${{ steps.changed-files.outputs.changed_files }}
-      run: |
-        echo "Changed files: $CHANGED_FILES"
-    - name: List all changed files
-      env:
-        ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
-      run: |
-        for file in ${ALL_CHANGED_FILES}; do
-          echo "$file was changed"
-        done
