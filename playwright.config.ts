@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { baseURL } from './demo-sites/constants';
+import { reportOutputFile } from './e2e/constants';
 
 const CI = process.env.CI === 'true';
 
@@ -20,7 +21,7 @@ export default defineConfig({
     ['list'],
     ['json', { outputFile: 'e2e/reports/json/report.json' }],
     ['html', { open: 'on-failure', outputFolder: 'e2e/reports/html' }],
-    ['blob', { outputFile: `e2e/reports/blob-report.zip` }]
+    ['blob', { outputFile: CI ? reportOutputFile : 'e2e/reports/blob-report.zip' }]
   ],
 
   use: {

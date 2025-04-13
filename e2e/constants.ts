@@ -12,3 +12,6 @@ export const testTags = [
   ...(runner ? [`@${runner}`] : []),
   ...(inDocker ? ['@docker'] : []),
 ]
+
+const jobIndex = Number(process.env.JOB_INDEX) + 1;
+export const reportOutputFile = `e2e/reports/blob-report-${inDocker ? 'docker-' : ''}${jobIndex}.zip`
