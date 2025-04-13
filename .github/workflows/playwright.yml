@@ -39,7 +39,7 @@ env:
 jobs:
   test:
     needs: test-docker
-    if: ${{ success() }}
+    if: ${{ false }}
     name: 'Screenshot testing - ${{ matrix.runner }} - ${{ matrix.project }}'
     timeout-minutes: 60
     runs-on: ${{ matrix.runner }}
@@ -101,7 +101,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        project: [ Chromium ]
+        project: [ Chromium, Firefox ]
         # project: [ Chromium, Firefox, Webkit ]
         runner: [ ubuntu-24.04 ]
         # runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
@@ -130,3 +130,37 @@ jobs:
       with:
         name: playwright-docker-reports-${{ matrix.runner }}-${{ matrix.project }}
         path: e2e/reports/
+    - name: Upload html report to GitHub Actions Artifacts
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: html-report-docker-${{ matrix.runner }}-${{ matrix.project }}
+        path: e2e/reports/html/
+        retention-days: 1
+
+  merge-reports:
+    if: ${{ !cancelled() }}
+    needs: [ test, test-docker ]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install dependencies
+      run: npm ci
+    - name: Download all html reports
+      uses: actions/download-artifact@v4
+      with:
+        path: all-html-reports
+        pattern: html-report-*
+        merge-multiple: true
+    - name: List directories all-html-reports
+      run: ls ./all-html-reports
+    - name: Merge into HTML Report
+      run: npx playwright merge-reports --reporter html ./all-html-reports
+    - name: Upload Merged HTML report
+      uses: actions/upload-artifact@v4
+      with:
+        name: html-report--attempt-${{ github.run_attempt }}
+        path: playwright-report
