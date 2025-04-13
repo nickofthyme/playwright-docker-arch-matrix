@@ -149,7 +149,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: blob-report-docker-${{ matrix.runner }}-${{ matrix.project }}
-        path: e2e/reports/blob-report.zip
+        path: e2e/reports/blob-report-*.zip
         retention-days: 1
 
   merge-reports:
