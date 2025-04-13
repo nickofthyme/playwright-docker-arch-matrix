@@ -108,9 +108,8 @@ jobs:
         runner: [ ubuntu-24.04 ]
         # runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
     container:
-      env:
-        HOME: /root # needed for firebase
       image: mcr.microsoft.com/playwright:v1.51.1-noble
+      options: --user --user 1001 # set user to pwuser, needed for firebase
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
