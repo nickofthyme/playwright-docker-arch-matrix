@@ -6,6 +6,7 @@ set -e
 
 echo "Running playwright tests inside local docker container"
 
+export DOCKER=true
 export CI=true
 export PORT=3000
 # export HOST=host.docker.internal
@@ -16,6 +17,7 @@ docker run \
   --rm `# removes named container on every run` \
   --init `# handles terminating signals like SIGTERM` \
   --name e2e-playwright-tests `# reusable name of container` \
+  -e DOCKER \
   -e CI \
   -e PORT \
   -e HOST \

@@ -2,3 +2,4 @@ node_modules/
 
 # Playwright
 /playwright/.cache/
+playwright-report

@@ -9,6 +9,7 @@
     "start:react": "cd ./demo-sites/simple-react-app && npm start",
     "start:demos": "npm run start:react",
     "start": "npm run start:demos & tsx watch demo-sites/app.ts",
+    "playwright": "playwright",
     "test": "playwright test",
     "test:docker": "./scripts/test-docker.sh"
   },

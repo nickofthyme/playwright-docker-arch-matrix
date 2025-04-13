@@ -10,15 +10,17 @@ export default defineConfig({
 
   fullyParallel: true,
   forbidOnly: CI,
-  retries: CI ? 2 : 0,
+  retries: 0,
+  // retries: CI ? 2 : 0,
   timeout: 10 * 1000,
   preserveOutput: 'failures-only',
   workers: CI ? 1 : undefined,
 
   reporter: [
     ['list'],
-    ['html', { open: 'on-failure', outputFolder: 'e2e/reports/html' }],
     ['json', { outputFile: 'e2e/reports/json/report.json' }],
+    ['html', { open: 'on-failure', outputFolder: 'e2e/reports/html' }],
+    ['blob', { outputFile: `e2e/reports/blob-report.zip` }]
   ],
 
   use: {

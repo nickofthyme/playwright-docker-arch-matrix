@@ -44,9 +44,9 @@ jobs:
     timeout-minutes: 60
     runs-on: ${{ matrix.runner }}
     env:
-      RUNNER: ${{ matrix.runner }}
+      RUNNER: ${{ matrix.runner }} # adds test tag
     strategy:
-      fail-fast: true
+      fail-fast: false
       # matrix:
       #   project: [ Chromium, Firefox, Webkit ]
       #   runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
@@ -97,9 +97,10 @@ jobs:
     timeout-minutes: 60
     runs-on: ${{ matrix.runner }}
     env:
-      RUNNER: ${{ matrix.runner }}
+      DOCKER: true # adds test tag
+      RUNNER: ${{ matrix.runner }} # adds test tag
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         project: [ Chromium ]
         # project: [ Chromium, Firefox, Webkit ]
@@ -125,17 +126,17 @@ jobs:
       run: npm ci
     - name: Run Playwright tests
       run: npm test -- --project=${{ matrix.project }} --update-snapshots=${{ inputs.updateMode }}
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
-      with:
-        name: playwright-docker-reports-${{ matrix.runner }}-${{ matrix.project }}
-        path: e2e/reports/
-    - name: Upload html report to GitHub Actions Artifacts
+    # - uses: actions/upload-artifact@v4
+    #   if: ${{ !cancelled() }}
+    #   with:
+    #     name: playwright-docker-reports-${{ matrix.runner }}-${{ matrix.project }}
+    #     path: e2e/reports/
+    - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}
       uses: actions/upload-artifact@v4
       with:
-        name: html-report-docker-${{ matrix.runner }}-${{ matrix.project }}
-        path: e2e/reports/html/
+        name: blob-report-docker-${{ matrix.runner }}-${{ matrix.project }}
+        path: e2e/reports/blob-report.zip
         retention-days: 1
 
   merge-reports:
@@ -152,15 +153,15 @@ jobs:
     - name: Download all html reports
       uses: actions/download-artifact@v4
       with:
-        path: all-html-reports
-        pattern: html-report-*
+        path: all-blob-reports
+        pattern: blob-report-*
         merge-multiple: true
-    - name: List directories all-html-reports
-      run: ls ./all-html-reports
+    - name: "List directories is /all-blob-reports"
+      run: ls ./all-blob-reports
     - name: Merge into HTML Report
-      run: npx playwright merge-reports --reporter html ./all-html-reports
+      run: npm run playwright -- merge-reports --config=./e2e/report-merge.config.ts ./all-blob-reports
     - name: Upload Merged HTML report
       uses: actions/upload-artifact@v4
       with:
-        name: html-report--attempt-${{ github.run_attempt }}
+        name: html-report-${{ github.run_attempt }}
         path: playwright-report
