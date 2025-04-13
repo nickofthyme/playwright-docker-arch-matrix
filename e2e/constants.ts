@@ -8,7 +8,9 @@ export const arch = os.arch();
 export const platformArch = `${platform}/${arch}`
 
 export const testTags = [
-  `@${platformArch}`,
+  // `@${platformArch}`,
+  `@${platform}`,
+  `@${arch}`,
   ...(runner ? [`@${runner}`] : []),
   ...(inDocker ? ['@docker'] : []),
 ]

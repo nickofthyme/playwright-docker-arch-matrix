@@ -1,8 +1,14 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices, ReporterDescription } from '@playwright/test';
 import { baseURL } from './demo-sites/constants';
 import { reportOutputFile } from './e2e/constants';
 
 const CI = process.env.CI === 'true';
+
+const baseReporters: ReporterDescription[] = [
+  ['list'],
+  ['json', { outputFile: 'e2e/reports/json/report.json' }],
+  ['html', { open: 'on-failure', outputFolder: 'e2e/reports/html' }],
+]
 
 export default defineConfig({
   testDir: './e2e/tests',
@@ -17,11 +23,9 @@ export default defineConfig({
   preserveOutput: 'failures-only',
   workers: CI ? 1 : undefined,
 
-  reporter: [
-    ['list'],
-    ['json', { outputFile: 'e2e/reports/json/report.json' }],
-    ['html', { open: 'on-failure', outputFolder: 'e2e/reports/html' }],
-    ['blob', { outputFile: CI ? reportOutputFile : 'e2e/reports/blob-report.zip' }]
+  reporter: !CI ? baseReporters : [
+    ...baseReporters,
+    ['blob', { outputFile: CI ? reportOutputFile : 'e2e/reports/blob-report.zip' }],
   ],
 
   use: {
