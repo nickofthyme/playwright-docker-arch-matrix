@@ -39,7 +39,7 @@ env:
 
 jobs:
   test:
-    name: 'Screenshot testing - ${{ matrix.runner }} - ${{ matrix.project }}'
+    name: 'Screenshot testing - ${{ matrix.runner }} - ${{ matrix.project.name }}'
     timeout-minutes: 60
     runs-on: ${{ matrix.runner }}
     env:
@@ -47,7 +47,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [ Chromium ]
+        project:
+          - name: Chromium
+            browser: chromium
         # project: [ Chromium, Firefox, Webkit ]
         runner: [ ubuntu-24.04-arm ]
         # runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
@@ -83,15 +85,21 @@ jobs:
       working-directory: demo-sites/simple-react-app
       run: npm ci
     - name: Install Playwright Browsers
-      run: npm run playwright:install
+      run: npm run playwright:install -- ${{ matrix.project.browser }}
     - name: Run Playwright tests
-      run: npm test -- --project=${{ matrix.project }} --update-snapshots=${{ inputs.updateMode }}
+      run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ inputs.updateMode }}
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
-        name: playwright-reports-${{ matrix.runner }}-${{ matrix.project }}
-        path: e2e/reports/
-
+        name: html-report-docker-${{ matrix.runner }}-${{ matrix.project }}
+        path: e2e/reports/html
+    - name: Upload blob report to GitHub Actions Artifacts
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: blob-report-docker-${{ matrix.runner }}-${{ matrix.project }}
+        path: e2e/reports/blob-report-*.zip
+        retention-days: 1
 
   test-docker:
     name: 'Screenshot testing - Docker - ${{ matrix.runner }} - ${{ matrix.project }}'
