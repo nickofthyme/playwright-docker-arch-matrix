@@ -4,6 +4,8 @@ set -e
 
 ### starts up a playwright docker container to run e2e tests
 
+echo "Running playwright tests inside local docker container"
+
 export CI=true
 export PORT=3000
 # export HOST=host.docker.internal

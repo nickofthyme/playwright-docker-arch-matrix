@@ -10,7 +10,7 @@ export default defineConfig({
 
   fullyParallel: true,
   forbidOnly: CI,
-  retries: CI ? 2 : 1,
+  retries: CI ? 2 : 0,
   timeout: 10 * 1000,
   preserveOutput: 'failures-only',
   workers: CI ? 1 : undefined,
@@ -46,18 +46,23 @@ export default defineConfig({
       name: 'chromium',
       // testMatch: /.+?examples.+?/,
       use: {
-        ...devices['Desktop Chrome']
+        ...devices['Desktop Chrome'],
       },
     },
 
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      // testMatch: /.+?examples.+?/,
+      use: {
+        ...devices['Desktop Firefox'],
+       },
     },
 
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: {
+        ...devices['Desktop Safari'],
+      },
     },
   ],
 

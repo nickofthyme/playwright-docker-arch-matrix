@@ -43,6 +43,8 @@ jobs:
     name: 'Screenshot testing - ${{ matrix.runner }} - ${{ matrix.project }}'
     timeout-minutes: 60
     runs-on: ${{ matrix.runner }}
+    env:
+      RUNNER: ${{ matrix.runner }}
     strategy:
       fail-fast: true
       # matrix:
@@ -94,6 +96,8 @@ jobs:
     name: 'Screenshot testing - Docker - ${{ matrix.runner }} - ${{ matrix.project }}'
     timeout-minutes: 60
     runs-on: ${{ matrix.runner }}
+    env:
+      RUNNER: ${{ matrix.runner }}
     strategy:
       fail-fast: true
       matrix:
