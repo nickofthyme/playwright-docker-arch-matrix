@@ -139,6 +139,13 @@ jobs:
     - name: Install react-app dependencies
       working-directory: demo-sites/simple-react-app
       run: npm ci
+    - run: whoami
+    - run: pwd
+    - run: id -nu 1001
+    - run: id -u pwuser
+    - run: |
+        mkdir -p /github
+        ln -s /root $HOME
     - name: Run Playwright tests
       run: npm test -- --project=${{ matrix.project }} --update-snapshots=${{ inputs.updateMode }}
     - uses: actions/upload-artifact@v4
