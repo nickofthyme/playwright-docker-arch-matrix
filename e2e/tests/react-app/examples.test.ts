@@ -8,9 +8,7 @@ test('should render text example', async ({ page }) => {
 
   if (!outletClip) throw new Error('no outletClip found');
 
-  const buffer = await page.screenshot({ fullPage: true, clip: outletClip })
-
-  await expect(buffer).toMatchSnapshot()
+  await expect(page).toHaveScreenshot({ fullPage: true, clip: outletClip })
 });
 
 test('should render canvas example', async ({ page }) => {
@@ -21,9 +19,7 @@ test('should render canvas example', async ({ page }) => {
 
   if (!outletClip) throw new Error('no outletClip found');
 
-  const buffer = await page.screenshot({ fullPage: true, clip: outletClip })
-
-  await expect(buffer).toMatchSnapshot()
+  await expect(page).toHaveScreenshot({ fullPage: true, clip: outletClip })
 });
 
 test('should render icons example', async ({ page }) => {
@@ -34,9 +30,7 @@ test('should render icons example', async ({ page }) => {
 
   if (!outletClip) throw new Error('no outletClip found');
 
-  const buffer = await page.screenshot({ fullPage: true, clip: outletClip })
-
-  await expect(buffer).toMatchSnapshot()
+  await expect(page).toHaveScreenshot({ fullPage: true, clip: outletClip })
 });
 
 test('should render image example', async ({ page }) => {
@@ -56,7 +50,5 @@ test('should render image example', async ({ page }) => {
 
   if (!outletClip) throw new Error('no outletClip found');
 
-  const buffer = await page.screenshot({ fullPage: true, clip: outletClip })
-
-  await expect(buffer).toMatchSnapshot()
+  await expect(page).toHaveScreenshot({ fullPage: true, clip: outletClip })
 });

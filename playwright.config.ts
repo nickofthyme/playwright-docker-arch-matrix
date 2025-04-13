@@ -10,8 +10,7 @@ export default defineConfig({
 
   fullyParallel: true,
   forbidOnly: CI,
-  retries: 0,
-  // retries: CI ? 2 : 1,
+  retries: CI ? 2 : 1,
   timeout: 10 * 1000,
   preserveOutput: 'failures-only',
   workers: CI ? 1 : undefined,
@@ -45,7 +44,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testMatch: /.+?examples.+?/,
+      // testMatch: /.+?examples.+?/,
       use: {
         ...devices['Desktop Chrome']
       },

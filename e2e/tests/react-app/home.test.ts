@@ -3,9 +3,7 @@ import { test, expect } from '@playwright/test';
 test('should render full page', async ({ page }) => {
   await page.goto('/simple-react-app');
 
-  const buffer = await page.screenshot({ fullPage: true })
-
-  await expect(buffer).toMatchSnapshot()
+  await expect(page).toHaveScreenshot({ fullPage: true })
 });
 
 test.describe('hover', () => {
