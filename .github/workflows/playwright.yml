@@ -126,11 +126,11 @@ jobs:
       run: npm ci
     - name: Run Playwright tests
       run: npm test -- --project=${{ matrix.project }} --update-snapshots=${{ inputs.updateMode }}
-    # - uses: actions/upload-artifact@v4
-    #   if: ${{ !cancelled() }}
-    #   with:
-    #     name: playwright-docker-reports-${{ matrix.runner }}-${{ matrix.project }}
-    #     path: e2e/reports/
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-html-report-docker-${{ matrix.runner }}-${{ matrix.project }}
+        path: e2e/reports/html
     - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}
       uses: actions/upload-artifact@v4
