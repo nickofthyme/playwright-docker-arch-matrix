@@ -89,11 +89,7 @@ jobs:
       run: npm run playwright:install -- ${{ matrix.project.browser }}
     - name: Run Playwright tests
       run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ inputs.updateMode }}
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
-      with:
-        name: html-report-docker-${{ matrix.runner }}-${{ matrix.project.browser }}
-        path: e2e/reports/html
+
     - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}
       uses: actions/upload-artifact@v4
@@ -162,11 +158,7 @@ jobs:
       run: npm ci
     - name: Run Playwright tests
       run: npm test -- --project=${{ matrix.project }} --update-snapshots=${{ inputs.updateMode }}
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
-      with:
-        name: html-report-docker-${{ matrix.runner }}-${{ matrix.project }}
-        path: e2e/reports/html
+
     - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}
       uses: actions/upload-artifact@v4
@@ -180,17 +172,19 @@ jobs:
       with:
         files: |
           e2e/screenshots/**/*.png
-    - name: Commit updated screenshots
+    - name: Commit and Push updated screenshots to ${{ github.ref_name }}
       if: ${{ steps.verify-changed-files.outputs.files_changed == 'true' && inputs.runnerTarget == matrix.runner }}
       uses: EndBug/add-and-commit@v9
       with:
         message: Update Playwright screenshots - Docker - ${{ matrix.runner }}
         add: e2e/screenshots/**/*.png
+        default_author: github_actions
 
   merge-reports:
     if: ${{ !cancelled() }}
     needs: [ test, test-docker ]
     runs-on: ubuntu-latest
+    name: Merge all playwright reports
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -199,6 +193,7 @@ jobs:
         cache: 'npm'
     - name: Install dependencies
       run: npm ci
+
     - name: Download all blob reports
       uses: actions/download-artifact@v4
       with:
@@ -214,3 +209,68 @@ jobs:
       with:
         name: html-report
         path: playwright-report
+
+  upload-report:
+    if: ${{ success() }}
+    needs: [ merge-reports ]
+    runs-on: ubuntu-latest
+    name: Deploy playwright report
+    steps:
+    - name: Checkout gh-pages branch
+      uses: actions/checkout@v4
+      with:
+        ref: refs/heads/gh-pages
+        repository: ${{ github.event.repository.full_name }}
+    # - name: Setup values based on event
+    #   id: setup
+    #   run: |
+    #     if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+    #       COMMIT_MESSAGE="Update html report for PR#${{ github.event.pull_request.number }}"
+    #       REPORT_PATH="pr/${{ github.event.pull_request.number }}"
+    #     else
+
+    #     fi
+
+    #     if [[ "${{ runner.os }}" == "Windows" ]]; then
+    #       echo "result=$VALUE" >> $env:GITHUB_OUTPUT
+    #     else
+    #       echo "result=$VALUE" >> $GITHUB_OUTPUT
+    #     fi
+    #   shell: bash {0}
+
+    # Steps for pull request
+    - name: Update html report for PR#${{ github.event.pull_request.number }}
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: EndBug/add-and-commit@v9
+      with:
+        message: Update Playwright report
+        add: e2e/screenshots/**/*.png
+        default_author: github_actions
+
+    # Steps for branch
+    - name: Download html report
+      if: ${{ github.event_name != 'pull_request' }}
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ github.ref_name }}
+        pattern: html-report
+    - run: ls
+    - run: ls ${{ github.ref_name }}
+    - name: Unzip report
+      if: ${{ github.event_name != 'pull_request' }}
+      run: |
+        if [[ "${{ runner.os }}" == "Linux" || "${{ runner.os }}" == "macOS" ]]; then
+          unzip source.zip -d ${{ github.ref_name }}
+        else
+          Expand-Archive -Path source.zip -DestinationPath ${{ github.ref_name }}
+        fi
+      shell: bash {0} # Use bash for Linux/macOS, falls back to PowerShell for Windows
+    - run: ls
+    - run: ls ${{ github.ref_name }}
+    - name: Update html report on ${{ github.ref_name }}
+      if: ${{ github.event_name != 'pull_request' }}
+      uses: EndBug/add-and-commit@v9
+      with:
+        message: Deploy Playwright report
+        add: ${{ github.ref_name }}
+        default_author: github_actions
