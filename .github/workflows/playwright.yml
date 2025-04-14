@@ -211,7 +211,7 @@ jobs:
         path: playwright-report
 
   upload-report:
-    if: ${{ success() }}
+    if: ${{ always() }}
     needs: [ merge-reports ]
     runs-on: ubuntu-latest
     name: Deploy playwright report
