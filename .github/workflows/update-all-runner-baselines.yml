@@ -38,7 +38,7 @@ jobs:
       RUNNER: ${{ matrix.runner }} # adds test tag
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 1
       matrix:
         runner: [ ubuntu-24.04 ]
         # runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
@@ -118,10 +118,9 @@ jobs:
       JOB_INDEX: ${{ strategy.job-index }} # to name blob report
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 1
       matrix:
-        runner: [ ubuntu-24.04 ]
-        # runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
+        runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
     container:
       image: mcr.microsoft.com/playwright:v1.51.1-noble
       options: --user 1001 # set user to pwuser, needed for firebase
