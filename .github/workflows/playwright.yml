@@ -243,8 +243,7 @@ jobs:
     - run: mkdir -p ${{ steps.setup.outputs.dest }}
     - run: ls
     - run: ls html-report
-    - name: Move file
-      run: mv html-report ${{ steps.setup.outputs.dest }}
+    - run: mv html-report/* ${{ steps.setup.outputs.dest }}
     - run: ls
     - run: ls ${{ steps.setup.outputs.dest }}
     - name: ${{ steps.setup.outputs.msg }}
