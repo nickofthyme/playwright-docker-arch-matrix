@@ -221,58 +221,36 @@ jobs:
       with:
         ref: refs/heads/gh-pages
         repository: ${{ github.event.repository.full_name }}
-    # - name: Setup values based on event
-    #   id: setup
-    #   run: |
-    #     if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-    #       COMMIT_MESSAGE="Update html report for PR#${{ github.event.pull_request.number }}"
-    #       REPORT_PATH="pr/${{ github.event.pull_request.number }}"
-    #     else
+    - name: Setup values based on event
+      id: setup
+      run: |
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          MSG="Update html report (PR#${{ github.event.pull_request.number }})"
+          DEST="pr/${{ github.event.pull_request.number }}"
+        else
+          MSG="Update html report (${{ github.ref_name }})"
+          DEST="${{ github.ref_name }}"
+        fi
 
-    #     fi
+        echo "msg=$MSG" >> $GITHUB_OUTPUT
+        echo "dest=$DEST" >> $GITHUB_OUTPUT
+      shell: bash {0}
 
-    #     if [[ "${{ runner.os }}" == "Windows" ]]; then
-    #       echo "result=$VALUE" >> $env:GITHUB_OUTPUT
-    #     else
-    #       echo "result=$VALUE" >> $GITHUB_OUTPUT
-    #     fi
-    #   shell: bash {0}
-
-    # Steps for pull request
-    - name: Update html report for PR#${{ github.event.pull_request.number }}
-      if: ${{ github.event_name == 'pull_request' }}
-      uses: EndBug/add-and-commit@v9
-      with:
-        message: Update Playwright report
-        add: e2e/screenshots/**/*.png
-        default_author: github_actions
-
-    # Steps for branch
     - name: Download html report
-      if: ${{ github.event_name != 'pull_request' }}
       uses: actions/download-artifact@v4
       with:
-        path: ${{ github.ref_name }}
         pattern: html-report
     - run: ls
+    - run: ls playwright-report
     - run: ls ${{ github.ref_name }}
-    - run: ls ${{ github.ref_name }}/html-report
-    - name: Unzip report
-      if: ${{ github.event_name != 'pull_request' }}
-      run: |
-        if [[ "${{ runner.os }}" == "Linux" || "${{ runner.os }}" == "macOS" ]]; then
-          unzip source.zip -d ${{ github.ref_name }}/html-report
-        else
-          Expand-Archive -Path source.zip -DestinationPath ${{ github.ref_name }}/html-report
-        fi
-      shell: bash {0} # Use bash for Linux/macOS, falls back to PowerShell for Windows
+    - name: Move file
+      run: mv playwright-report ${{ steps.setup.outputs.dest }}
     - run: ls
+    - run: ls playwright-report
     - run: ls ${{ github.ref_name }}
-    - run: ls ${{ github.ref_name }}/html-report
-    - name: Update html report on ${{ github.ref_name }}
-      if: ${{ github.event_name != 'pull_request' }}
+    - name: ${{ steps.setup.outputs.msg }}
       uses: EndBug/add-and-commit@v9
       with:
-        message: Deploy Playwright report
-        add: ${{ github.ref_name }}
+        message: ${{ steps.setup.outputs.msg }}
+        add: ${{ steps.setup.outputs.dest }}
         default_author: github_actions
