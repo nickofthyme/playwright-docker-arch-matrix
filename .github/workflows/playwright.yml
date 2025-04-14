@@ -29,9 +29,6 @@ on:
           - missing
           - none
 
-permissions:
-  contents: write
-
 env:
   CI: true
   NODE_VERSION: lts/*
@@ -42,6 +39,8 @@ jobs:
     timeout-minutes: 60
     if: ${{ false }}
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: write
     env:
       RUNNER: ${{ matrix.runner }} # adds test tag
     strategy:
@@ -100,8 +99,9 @@ jobs:
   test-docker:
     name: 'Screenshot testing - Docker - ${{ matrix.runner }} - ${{ matrix.project }}'
     timeout-minutes: 60
-    # if: ${{ false }}
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: write
     env:
       DOCKER: true # adds test tag
       RUNNER: ${{ matrix.runner }} # adds test tag
@@ -180,10 +180,10 @@ jobs:
         default_author: github_actions
 
   merge-reports:
+    name: Merge all playwright reports
     if: ${{ !cancelled() }}
     needs: [ test, test-docker ]
     runs-on: ubuntu-latest
-    name: Merge all playwright reports
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -210,10 +210,12 @@ jobs:
         path: playwright-report
 
   upload-report:
+    name: Deploy playwright report
     if: ${{ !cancelled() }}
     needs: [ merge-reports ]
     runs-on: ubuntu-latest
-    name: Deploy playwright report
+    permissions:
+      issues: write
     steps:
     - name: Checkout gh-pages branch
       uses: actions/checkout@v4
