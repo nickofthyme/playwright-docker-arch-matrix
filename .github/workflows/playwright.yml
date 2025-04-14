@@ -242,7 +242,6 @@ jobs:
         pattern: html-report
     - run: ls
     - run: ls html-report
-    - run: ls ${{ github.ref_name }}
     - name: Move file
       run: mv html-report ${{ steps.setup.outputs.dest }}
     - run: ls
