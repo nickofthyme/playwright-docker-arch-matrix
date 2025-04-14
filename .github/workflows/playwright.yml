@@ -246,7 +246,7 @@ jobs:
     - name: Move file
       run: mv html-report ${{ steps.setup.outputs.dest }}
     - run: ls
-    - run: ls ${{ github.ref_name }}
+    - run: ls ${{ steps.setup.outputs.dest }}
     - name: ${{ steps.setup.outputs.msg }}
       uses: EndBug/add-and-commit@v9
       with:
