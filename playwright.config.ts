@@ -1,6 +1,6 @@
 import { defineConfig, devices, ReporterDescription } from '@playwright/test';
 import { baseURL } from './demo-sites/constants';
-import { reportOutputFile } from './e2e/constants';
+import { reportOutputFile, pathTemplate, platform } from './e2e/constants';
 
 const CI = process.env.CI === 'true';
 
@@ -44,14 +44,13 @@ export default defineConfig({
       maxDiffPixelRatio: 0,
       maxDiffPixels: 0,
       animations: "disabled",
-      pathTemplate: '{snapshotDir}/{testFilePath}/{testName}-{projectName}-{platform}{ext}',
+      pathTemplate,
     },
   },
 
   projects: [
     {
       name: 'chromium',
-      // testMatch: /.+?examples.+?/,
       use: {
         ...devices['Desktop Chrome'],
       },
@@ -59,18 +58,20 @@ export default defineConfig({
 
     {
       name: 'firefox',
-      // testMatch: /.+?examples.+?/,
       use: {
         ...devices['Desktop Firefox'],
        },
     },
 
-    {
-      name: 'webkit',
-      use: {
-        ...devices['Desktop Safari'],
-      },
-    },
+    // This way we can run all projects without having to explicitly exclude webkit
+    ...(platform === 'darwin' || platform === 'linux' ?
+      [{
+        name: 'webkit',
+        use: {
+          ...devices['Desktop Safari'],
+        },
+      }] : []
+    ),
   ],
 
   /* Run your local dev server before starting the tests */

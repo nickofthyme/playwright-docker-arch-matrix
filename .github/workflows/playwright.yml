@@ -8,7 +8,6 @@ on:
     inputs:
       runnerTarget:
         description: "Runner target"
-        required: false
         default: " "
         type: choice
         options:
@@ -18,9 +17,12 @@ on:
           - ubuntu-24.04-arm
           - macos-13
           - macos-15
+      runHostTests:
+        description: "Run non-docker tests"
+        default: false
+        type: boolean
       updateMode:
         description: "Update Mode"
-        required: false
         default: none
         type: choice
         options:
@@ -36,8 +38,8 @@ env:
 jobs:
   test:
     name: 'Screenshot testing - ${{ matrix.runner }} - ${{ matrix.project.name }}'
-    timeout-minutes: 60
-    if: ${{ false }}
+    if: ${{ inputs.runHostTests || github.event_name == 'pull_request' }}
+    timeout-minutes: 15
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
@@ -49,9 +51,16 @@ jobs:
         project:
           - name: Chromium
             browser: chromium
-        # project: [ Chromium, Firefox, Webkit ]
-        runner: [ ubuntu-24.04-arm ]
+          - name: Firefox
+            browser: firefox
+          - name: Webkit
+            browser: webkit
+        runner: [ ubuntu-24.04 ]
         # runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
+        exclude:
+          - runner: windows-2025
+            project:
+              browser: webkit
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -79,7 +88,7 @@ jobs:
       run: printenv
 
     - name: Install main dependencies
-      run: npm ci
+      run: npm ci --ignore-scripts
     - name: Install react-app dependencies
       working-directory: demo-sites/simple-react-app
       run: npm ci
@@ -98,7 +107,7 @@ jobs:
 
   test-docker:
     name: 'Screenshot testing - Docker - ${{ matrix.runner }} - ${{ matrix.project }}'
-    timeout-minutes: 60
+    timeout-minutes: 15
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
@@ -108,11 +117,22 @@ jobs:
       JOB_INDEX: ${{ strategy.job-index }} # to name blob report
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
-        project: [ Chromium ]
-        # project: [ Chromium, Firefox, Webkit ]
+        project:
+          - name: Chromium
+            browser: chromium
+          - name: Firefox
+            browser: firefox
+          - name: Webkit
+            browser: webkit
         runner: [ ubuntu-24.04 ]
         # runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
+        exclude:
+          - runner: windows-2025
+            project:
+              browser: webkit
+
     container:
       image: mcr.microsoft.com/playwright:v1.51.1-noble
       options: --user 1001 # set user to pwuser, needed for firebase
@@ -151,7 +171,7 @@ jobs:
       run: printenv
 
     - name: Install main dependencies
-      run: npm ci
+      run: npm ci --ignore-scripts
     - name: Install react-app dependencies
       working-directory: demo-sites/simple-react-app
       run: npm ci
@@ -165,19 +185,6 @@ jobs:
         name: blob-report-docker-${{ matrix.runner }}-${{ matrix.project }}
         path: e2e/reports/blob-report-*.zip
         retention-days: 1
-    - name: Verify Changed files
-      uses: tj-actions/verify-changed-files@v20
-      id: verify-changed-files
-      with:
-        files: |
-          e2e/screenshots/**/*.png
-    - name: Commit and Push updated screenshots to ${{ github.ref_name }}
-      if: ${{ steps.verify-changed-files.outputs.files_changed == 'true' && inputs.runnerTarget == matrix.runner }}
-      uses: EndBug/add-and-commit@v9
-      with:
-        message: Update Playwright screenshots - Docker - ${{ matrix.runner }}
-        add: e2e/screenshots/**/*.png
-        default_author: github_actions
 
   merge-reports:
     name: Merge all playwright reports
