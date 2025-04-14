@@ -216,7 +216,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      issues: write
+      # issues: write
       pull-requests: write
     steps:
     - name: Checkout gh-pages branch
@@ -266,10 +266,9 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: `
-              ## Test run complete!
+            body: `## Test run complete!
 
-              Available assets:
-              - Playwright report - [link](https://nickofthyme.github.io/playwright-docker-arch-matrix/${{ steps.setup.outputs.dest }}/index.html)
+            Available assets:
+            - Playwright report - [link](https://nickofthyme.github.io/playwright-docker-arch-matrix/${{ steps.setup.outputs.dest }}/index.html)
             `
           })
