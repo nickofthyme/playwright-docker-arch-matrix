@@ -26,4 +26,4 @@ const hostDir = inDocker ? 'docker' : 'host';
 
 const basePathTemplate = `{snapshotDir}/{testFilePath}/{testName}-{projectName}${platformPath}{ext}`
 export const pathTemplate = !runner ? basePathTemplate :
-  `e2e/runner-snapshots/${hostDir}/${runner}/{testFilePath}/{testName}-{projectName}{ext}`;
+  `e2e/runner-screenshots/${hostDir}/${runner}/{testFilePath}/{testName}-{projectName}{ext}`;

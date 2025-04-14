@@ -17,6 +17,10 @@ on:
           - all
           - changed
           - missing
+      updateDockerScreenshots:
+        description: "Update docker screenshots"
+        default: true
+        type: boolean
       updateHostScreenshots:
         description: "Update non-docker screenshots"
         default: false
@@ -40,8 +44,8 @@ jobs:
       fail-fast: false
       max-parallel: 1
       matrix:
-        runner: [ ubuntu-24.04 ]
-        # runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
+        # runner: [ ubuntu-24.04 ]
+        runner: [ windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
     steps:
     - name: Checkout branch (${{ github.ref_name }}) # Need to checkout ref to use git
       uses: actions/checkout@v4
@@ -85,9 +89,9 @@ jobs:
 
     - run: ls
     - run: ls e2e
-    - run: ls e2e/runner-snapshots
-    - run: ls e2e/runner-snapshots/host
-    - run: ls e2e/runner-snapshots/host/${{ matrix.runner }}
+    - run: ls e2e/runner-screenshots
+    - run: ls e2e/runner-screenshots/host
+    - run: ls e2e/runner-screenshots/host/${{ matrix.runner }}
 
     - name: Verify Changed files
       continue-on-error: true
@@ -95,19 +99,19 @@ jobs:
       id: changed-files
       with:
         files: |
-          e2e/runner-snapshots/host/${{ matrix.runner }}/**/*.png
+          e2e/runner-screenshots/host/${{ matrix.runner }}/**/*.png
     - name: Commit and Push updated screenshots to ${{ github.ref_name }}
       if: ${{ steps.changed-files.outputs.files_changed == 'true' }}
       uses: EndBug/add-and-commit@v9
       with:
         message: Update runner screenshots for `${{ matrix.runner }}`
-        add: e2e/runner-snapshots/host/${{ matrix.runner }}/**/*.png
+        add: e2e/runner-screenshots/host/${{ matrix.runner }}/**/*.png
         default_author: github_actions
 
   test-docker:
     name: 'Updating Screenshot baselines for ${{ matrix.runner }} (docker)'
     needs: test
-    if: ${{ !failure() }}
+    if: ${{ !failure() && inputs.updateDockerScreenshots }}
     timeout-minutes: 15
     runs-on: ${{ matrix.runner }}
     permissions:
@@ -165,9 +169,9 @@ jobs:
 
     - run: ls
     - run: ls e2e
-    - run: ls e2e/runner-snapshots
-    - run: ls e2e/runner-snapshots/docker
-    - run: ls e2e/runner-snapshots/docker/${{ matrix.runner }}
+    - run: ls e2e/runner-screenshots
+    - run: ls e2e/runner-screenshots/docker
+    - run: ls e2e/runner-screenshots/docker/${{ matrix.runner }}
 
     - name: Verify Changed files
       continue-on-error: true
@@ -175,12 +179,12 @@ jobs:
       id: changed-files
       with:
         files: |
-          e2e/runner-snapshots/docker/${{ matrix.runner }}/**/*.png
+          e2e/runner-screenshots/docker/${{ matrix.runner }}/**/*.png
     - name: Commit and Push updated screenshots to ${{ github.ref_name }}
       if: ${{ steps.changed-files.outputs.files_changed == 'true' }}
       uses: EndBug/add-and-commit@v9
       with:
         message: Update runner screenshots for `${{ matrix.runner }}`
-        add: e2e/runner-snapshots/docker/${{ matrix.runner }}/**/*.png
+        add: e2e/runner-screenshots/docker/${{ matrix.runner }}/**/*.png
         default_author: github_actions
 
