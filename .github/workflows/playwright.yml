@@ -256,17 +256,19 @@ jobs:
         pattern: html-report
     - run: ls
     - run: ls ${{ github.ref_name }}
+    - run: ls ${{ github.ref_name }}/html-report
     - name: Unzip report
       if: ${{ github.event_name != 'pull_request' }}
       run: |
         if [[ "${{ runner.os }}" == "Linux" || "${{ runner.os }}" == "macOS" ]]; then
-          unzip source.zip -d ${{ github.ref_name }}
+          unzip source.zip -d ${{ github.ref_name }}/html-report
         else
-          Expand-Archive -Path source.zip -DestinationPath ${{ github.ref_name }}
+          Expand-Archive -Path source.zip -DestinationPath ${{ github.ref_name }}/html-report
         fi
       shell: bash {0} # Use bash for Linux/macOS, falls back to PowerShell for Windows
     - run: ls
     - run: ls ${{ github.ref_name }}
+    - run: ls ${{ github.ref_name }}/html-report
     - name: Update html report on ${{ github.ref_name }}
       if: ${{ github.event_name != 'pull_request' }}
       uses: EndBug/add-and-commit@v9
