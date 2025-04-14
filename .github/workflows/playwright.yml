@@ -215,8 +215,9 @@ jobs:
     needs: [ merge-reports ]
     runs-on: ubuntu-latest
     permissions:
-      issues: write
       contents: write
+      issues: write
+      pull-requests: write
     steps:
     - name: Checkout gh-pages branch
       uses: actions/checkout@v4
