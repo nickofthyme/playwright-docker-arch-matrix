@@ -6,6 +6,7 @@ set -e
 
 echo "Running playwright tests inside local docker container"
 
+export PLATFORM_AGNOSTIC=true
 export DOCKER=true
 export CI=true
 export PORT=3000
@@ -17,6 +18,7 @@ docker run \
   --rm `# removes named container on every run` \
   --init `# handles terminating signals like SIGTERM` \
   --name e2e-playwright-tests `# reusable name of container` \
+  -e PLATFORM_AGNOSTIC \
   -e DOCKER \
   -e CI \
   -e PORT \
@@ -24,4 +26,4 @@ docker run \
   -w /app `# working directory` \
   -v $(pwd)/:/app `# mount local / directory in app/ directory in container` \
   mcr.microsoft.com/playwright:v1.51.1-noble \
-  npm test -- "$@" # forward any additional passed args
+  npm i && npm test -- "$@" # forward any additional passed args
