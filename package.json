@@ -4,7 +4,7 @@
   "license": "ISC",
   "type": "module",
   "scripts": {
-    "postinstall": "cd ./demo-sites/simple-react-app && npm i",
+    "postinstall": "cd ./demo-sites/simple-react-app && npm i --force",
     "playwright:install": "playwright install --with-deps",
     "start:react": "cd ./demo-sites/simple-react-app && npm start",
     "start:demos": "npm run start:react",

@@ -90,7 +90,7 @@ jobs:
       run: npm ci --ignore-scripts
     - name: Install react-app dependencies
       working-directory: demo-sites/simple-react-app
-      run: npm ci
+      run: npm ci --force # ignore elastic-charts dep error
     - name: Install Playwright Browser (${{ matrix.project.browser }})
       run: npm run playwright:install -- ${{ matrix.project.browser }}
     - name: Run Playwright tests
@@ -167,7 +167,7 @@ jobs:
       run: npm ci --ignore-scripts
     - name: Install react-app dependencies
       working-directory: demo-sites/simple-react-app
-      run: npm ci
+      run: npm ci --force # ignore elastic-charts dep error
     - name: Run Playwright tests
       run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ inputs.updateMode }}
 

@@ -6,37 +6,28 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Axis, Chart as ElasticChart, Position, Settings, BarSeries } from '@elastic/charts';
+import { Axis, Chart as ElasticChart, Position, Settings, BarSeries, TexturedStyles } from '@elastic/charts';
 import { data } from './data';
 
 import '@elastic/charts/dist/theme_light.css';
 
 ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend);
 
+const textureMap: TexturedStyles[] = [
+  { shape: 'triangle', size: 30 },
+  { shape: 'line', size: 10, spacing: 10 },
+  { shape: 'circle' },
+  { shape: 'plus' },
+]
+
 export function Chart() {
   return (
     <ElasticChart>
       <Settings
         theme={{
-          areaSeriesStyle: {
-            area: {
-              texture: {
-                shape: 'circle',
-                strokeWidth: 1,
-                rotation: 45,
-                shapeRotation: 0,
-                size: 20,
-                opacity: 1,
-                spacing: { x: 10, y: 10 },
-                offset: { x: 0, y: 0, global: true },
-              },
-              fill: 'transparent',
-            },
-          },
           barSeriesStyle: {
             rect: {
               texture: {
-                shape: 'circle',
                 strokeWidth: 1,
                 rotation: 45,
                 shapeRotation: 0,
@@ -58,6 +49,11 @@ export function Chart() {
       {new Array(4).fill(0).map((v, i) => (
         <BarSeries
           key={i}
+          barSeriesStyle={{
+            rect: {
+              texture: textureMap[i],
+            }
+          }}
           id={`series-${i}`}
           xAccessor="x"
           yAccessors={['y']}
