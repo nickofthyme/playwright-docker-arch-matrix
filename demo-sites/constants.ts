@@ -3,6 +3,7 @@ let env: any = {}
 try {
   env = process.env // node env
 } catch (error) {
+  // @ts-ignore
   env = import.meta.env; // vite env
 }
 
