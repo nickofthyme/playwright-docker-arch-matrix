@@ -27,16 +27,55 @@ Workflow label | Virtual Machine | Processor (CPU) | Memory (RAM) | Storage (SSD
 - macOS 13 Ventura, or later.
 - Debian 12, Ubuntu 22.04, Ubuntu 24.04, on x86-64 and arm64 architecture.
 
+## Demo apps
+
+- Playwright.dev - A copy of home page for testing - [link](https://nickofthyme.github.io/playwright-docker-arch-matrix/playwright-dev).
+- React demo app - React starter app with added examples - [link](https://nickofthyme.github.io/playwright-docker-arch-matrix/simple-react-app).
+  - Text - Variety of typography via tailwind - [link](https://nickofthyme.github.io/playwright-docker-arch-matrix/simple-react-app/examples/text)
+  - Canvas - `Chart.js` example scatter plot - [link](https://nickofthyme.github.io/playwright-docker-arch-matrix/simple-react-app/examples/canvas)
+  - Chart - Elastic charts examples from original issue - [link](https://nickofthyme.github.io/playwright-docker-arch-matrix/simple-react-app/examples/chart)
+  - Icons - Set of svg icons - [link](https://nickofthyme.github.io/playwright-docker-arch-matrix/simple-react-app/examples/icons)
+  - Image - A high-res image - [link](https://nickofthyme.github.io/playwright-docker-arch-matrix/simple-react-app/examples/image)
+
 ## Screenshot naming
 
 By default, Playwright names the screenshots by joining the sanitized test title, project name and platform, like so...
 
 ```
 {snapshotDir}/{testFilePath}/{testName}-{projectName}-{platform}{ext}
+
+// ./e2e/screenshots/playwright-dev.test.ts/should-render-full-page-chromium-darwin.png
 ```
 
-We need to alter this to compare snapshot agnostic of the platform in which they are run. We do this using the [`expect.toHaveScreenshot.pathTemplate`](https://playwright.dev/docs/api/class-testconfig#test-config-snapshot-path-template) option by setting it to...
+To compare screenshot agnostically across all runs, we need to alter this. We do so using the [`expect.toHaveScreenshot.pathTemplate`](https://playwright.dev/docs/api/class-testconfig#test-config-snapshot-path-template) option by setting it to...
 
 ```
 {snapshotDir}/{testFilePath}/{testName}-{projectName}{ext}
+// ./e2e/screenshots/playwright-dev.test.ts/should-render-full-page-chromium.png
 ```
+
+## Testing cases
+
+### Playwright.dev
+
+file: `e2e/tests/playwright-dev.test.ts`
+
+These tests are meant to simulate a full page screenshot testing and how variability affects the screenshot testing.
+
+### `@elastic/charts`
+
+file: `e2e/tests/elastic-charts.test.ts`
+
+These tests are meant to test the original case described in the issue using `@elastic/charts` and how hover, patterns and canvas affects the screenshot testing.
+
+### Starter react app home page
+
+file: `e2e/tests/react-app/home.test.ts`
+
+These tests are meant to test how hover, icons and drop shadows affects the screenshot testing.
+
+### Example cases
+
+file: `e2e/tests/react-app/examples.test.ts`
+
+These are the examples described above and are meant to test the basic static simple use case of screenshot testing.
