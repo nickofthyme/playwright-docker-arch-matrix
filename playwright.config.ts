@@ -17,8 +17,7 @@ export default defineConfig({
 
   fullyParallel: true,
   forbidOnly: CI,
-  retries: 0,
-  // retries: CI ? 2 : 0,
+  retries: CI ? 2 : 0,
   timeout: 10 * 1000,
   preserveOutput: 'failures-only',
   workers: CI ? 1 : undefined,

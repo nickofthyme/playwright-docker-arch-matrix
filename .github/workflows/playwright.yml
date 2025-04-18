@@ -34,6 +34,7 @@ on:
 env:
   CI: true
   NODE_VERSION: lts/*
+  UPDATE_MODE: ${{ inputs.updateMode || 'none' }}
 
 jobs:
   test:
@@ -94,7 +95,7 @@ jobs:
     - name: Install Playwright Browser (${{ matrix.project.browser }})
       run: npm run playwright:install -- ${{ matrix.project.browser }}
     - name: Run Playwright tests
-      run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ inputs.updateMode }}
+      run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ env.UPDATE_MODE }}
 
     - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}
@@ -169,7 +170,7 @@ jobs:
       working-directory: demo-sites/simple-react-app
       run: npm ci --force # ignore elastic-charts dep error
     - name: Run Playwright tests
-      run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ inputs.updateMode }}
+      run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ env.UPDATE_MODE }}
 
     - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}
