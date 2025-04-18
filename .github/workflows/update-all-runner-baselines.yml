@@ -46,10 +46,6 @@ jobs:
       matrix:
         runner: [ ubuntu-24.04, ubuntu-24.04-arm ]
         # runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
-        exclude:
-          - runner: windows-2025
-            project:
-              browser: webkit
     steps:
     - name: Checkout branch (${{ github.ref_name }}) # Need to checkout ref to use git
       uses: actions/checkout@v4
