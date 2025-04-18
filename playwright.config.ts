@@ -1,5 +1,14 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices, ReporterDescription } from '@playwright/test';
 import { baseURL } from './demo-sites/constants';
+import { reportOutputFile, pathTemplate, platform } from './e2e/constants';
+
+const CI = process.env.CI === 'true';
+
+const baseReporters: ReporterDescription[] = [
+  ['list'],
+  ['json', { outputFile: 'e2e/reports/json/report.json' }],
+  ['html', { open: 'on-failure', outputFolder: 'e2e/reports/html' }],
+]
 
 export default defineConfig({
   testDir: './e2e/tests',
@@ -7,16 +16,16 @@ export default defineConfig({
   outputDir: 'e2e/test-failures',
 
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 1,
+  forbidOnly: CI,
+  retries: 0,
+  // retries: CI ? 2 : 0,
   timeout: 10 * 1000,
   preserveOutput: 'failures-only',
-  workers: process.env.CI ? 1 : undefined,
+  workers: CI ? 1 : undefined,
 
-  reporter: [
-    ['list'],
-    ['html', { open: 'on-failure', outputFolder: 'e2e/reports/html' }],
-    ['json', { outputFile: 'e2e/reports/json/report.json' }],
+  reporter: !CI ? baseReporters : [
+    ...baseReporters,
+    ['blob', { outputFile: CI ? reportOutputFile : 'e2e/reports/blob-report.zip' }],
   ],
 
   use: {
@@ -35,7 +44,7 @@ export default defineConfig({
       maxDiffPixelRatio: 0,
       maxDiffPixels: 0,
       animations: "disabled",
-      pathTemplate: '{snapshotDir}/{testFilePath}/{testName}-{projectName}{ext}',
+      pathTemplate,
     },
   },
 
@@ -43,25 +52,32 @@ export default defineConfig({
     {
       name: 'chromium',
       use: {
-        ...devices['Desktop Chrome']
+        ...devices['Desktop Chrome'],
       },
     },
 
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: {
+        ...devices['Desktop Firefox'],
+       },
     },
 
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
+    // This way we can run all projects without having to explicitly exclude webkit
+    ...(platform === 'darwin' || platform === 'linux' ?
+      [{
+        name: 'webkit',
+        use: {
+          ...devices['Desktop Safari'],
+        },
+      }] : []
+    ),
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
+  webServer: CI ? {
     command: 'npm start',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-  },
+    url: baseURL,
+    reuseExistingServer: false,
+  } : undefined,
 });
