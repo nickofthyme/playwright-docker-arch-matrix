@@ -1,44 +1,60 @@
-name: Playwright Visual Regression Tests
+name: Update all Visual Regression Baselines
+
+# This action does the following
+# - Runs playwright tests in update mode
+# - Stores new screenshots in a unique directory by runner (i.e. runnerScreenshots)
+# - Updates target baselines from selected runner/type
 
 on:
-  pull_request:
-    branches: [ main ]
-
   workflow_dispatch:
     inputs:
+      # Update baselines screenshots from target runner
       runnerTarget:
         description: "Runner target"
-        default: " "
+        default: ubuntu-24.04
         type: choice
         options:
-          - " "
           - ubuntu-24.04
           - windows-2025
           - ubuntu-24.04-arm
           - macos-13
           - macos-15
-      runHostTests:
-        description: "Run non-docker tests"
-        default: false
-        type: boolean
+      # Update baselines using docker or non-docker
+      runnerTargetType:
+        description: "Runner target type"
+        default: docker
+        type: choice
+        options:
+          - docker
+          - host
       updateMode:
         description: "Update Mode"
-        default: none
+        required: true
+        default: all
         type: choice
         options:
           - all
           - changed
           - missing
-          - none
+      runHostTests:
+        description: "Run non-docker tests"
+        default: false
+        type: boolean
+      platformAgnostic:
+        description: "Run tests agnostic of platform"
+        default: true
+        type: boolean
 
 env:
   CI: true
   NODE_VERSION: lts/*
+  RUNNER_TARGET: ${{ inputs.runnerTarget }}
+  PLATFORM_AGNOSTIC: ${{ inputs.platformAgnostic }}
 
 jobs:
   test:
     name: 'Screenshot testing - ${{ matrix.runner }} - ${{ matrix.project.name }}'
-    if: ${{ inputs.runHostTests }}
+    if: ${{ inputs.runHostTests || inputs.runnerTargetType != 'docker' }}
     timeout-minutes: 15
     runs-on: ${{ matrix.runner }}
     permissions:
@@ -55,11 +71,8 @@ jobs:
             browser: firefox
           - name: Webkit
             browser: webkit
-        runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
-        exclude:
-          - runner: windows-2025
-            project:
-              browser: webkit
+        runner: [ ubuntu-24.04 ]
+        # runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -105,7 +118,8 @@ jobs:
         retention-days: 1
 
   test-docker:
-    name: 'Screenshot testing - Docker - ${{ matrix.runner }} - ${{ matrix.project.name }}'
+    name: 'Screenshot testing - Docker - ${{ matrix.runner }} - ${{ matrix.project }}'
+    needs: test
     timeout-minutes: 15
     runs-on: ${{ matrix.runner }}
     permissions:
@@ -118,14 +132,10 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        project:
-          - name: Chromium
-            browser: chromium
-          - name: Firefox
-            browser: firefox
-          - name: Webkit
-            browser: webkit
-        runner: [ ubuntu-24.04, ubuntu-24.04-arm ]
+        project: [ Chromium ]
+        # project: [ Chromium, Firefox, Webkit ]
+        runner: [ ubuntu-24.04 ]
+        # runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
     container:
       image: mcr.microsoft.com/playwright:v1.51.1-noble
       options: --user 1001 # set user to pwuser, needed for firebase
@@ -169,105 +179,26 @@ jobs:
       working-directory: demo-sites/simple-react-app
       run: npm ci
     - name: Run Playwright tests
-      run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ inputs.updateMode }}
+      run: npm test -- --project=${{ matrix.project }} --update-snapshots=${{ inputs.updateMode }}
 
     - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}
       uses: actions/upload-artifact@v4
       with:
-        name: blob-report-docker-${{ matrix.runner }}-${{ matrix.project.browser }}
+        name: blob-report-docker-${{ matrix.runner }}-${{ matrix.project }}
         path: e2e/reports/blob-report-*.zip
         retention-days: 1
-
-  merge-reports:
-    name: Merge all playwright reports
-    if: ${{ !cancelled() }}
-    needs: [ test, test-docker ]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
+    - name: Verify Changed files
+      uses: tj-actions/verify-changed-files@v20
+      id: verify-changed-files
       with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Download all blob reports
-      uses: actions/download-artifact@v4
-      with:
-        path: all-blob-reports
-        pattern: blob-report-*
-        merge-multiple: true
-    - name: "List directories is /all-blob-reports"
-      run: ls ./all-blob-reports
-    - name: Merge HTML Reports
-      run: npm run playwright -- merge-reports --config=./e2e/report-merge.config.ts ./all-blob-reports
-    - name: Upload Merged HTML report
-      uses: actions/upload-artifact@v4
-      with:
-        name: html-report
-        path: playwright-report
-
-  upload-report:
-    name: Deploy playwright report
-    if: ${{ !cancelled() }}
-    needs: [ merge-reports ]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-    - name: Checkout gh-pages branch
-      uses: actions/checkout@v4
-      with:
-        ref: refs/heads/gh-pages
-        repository: ${{ github.event.repository.full_name }}
-    - name: Setup values based on event
-      id: setup
-      run: |
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          MSG="Update html report (PR#${{ github.event.pull_request.number }})"
-          DEST="pr/${{ github.event.pull_request.number }}"
-        else
-          MSG="Update html report (${{ github.ref_name }})"
-          DEST="${{ github.ref_name }}"
-        fi
-
-        echo "msg=$MSG" >> $GITHUB_OUTPUT
-        echo "dest=$DEST" >> $GITHUB_OUTPUT
-      shell: bash {0}
-
-    - name: Download html report
-      uses: actions/download-artifact@v4
-      with:
-        pattern: html-report
-    - run: rm -fr ${{ steps.setup.outputs.dest }}
-    - run: mkdir -p ${{ steps.setup.outputs.dest }}
-    - run: ls
-    - run: ls html-report
-    - run: mv html-report/* ${{ steps.setup.outputs.dest }}
-    - run: ls
-    - run: ls ${{ steps.setup.outputs.dest }}
-    - name: ${{ steps.setup.outputs.msg }}
+        files: |
+          e2e/screenshots/**/*.png
+    - name: Commit and Push updated screenshots to ${{ github.ref_name }}
+      if: ${{ steps.verify-changed-files.outputs.files_changed == 'true' && inputs.runnerTarget == matrix.runner }}
       uses: EndBug/add-and-commit@v9
       with:
-        message: ${{ steps.setup.outputs.msg }}
-        add: ${{ steps.setup.outputs.dest }}
+        message: Update Playwright screenshots - Docker - ${{ matrix.runner }}
+        add: e2e/screenshots/**/*.png
         default_author: github_actions
 
-    - name: Post comment on pull request
-      uses: actions/github-script@v7
-      if: ${{ github.event_name == 'pull_request' }}
-      with:
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: `## Test run complete!
-
-            Available assets:
-            - Playwright report - [link](https://nickofthyme.github.io/playwright-docker-arch-matrix/${{ steps.setup.outputs.dest }}/index.html)
-            `
-          })

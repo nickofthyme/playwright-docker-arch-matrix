@@ -1,0 +1,190 @@
+name: Update all Visual Regression Baselines per runner
+
+# This action does the following
+# - Runs playwright tests in update mode
+# - Stores new screenshots in a unique directory by runner (i.e. runnerScreenshots)
+# - Updates target baselines from selected runner/type
+
+on:
+  workflow_dispatch:
+    inputs:
+      updateMode:
+        description: "Update Mode"
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - changed
+          - missing
+      updateDockerScreenshots:
+        description: "Update docker screenshots"
+        default: true
+        type: boolean
+      updateHostScreenshots:
+        description: "Update non-docker screenshots"
+        default: false
+        type: boolean
+
+env:
+  CI: true
+  NODE_VERSION: lts/*
+
+jobs:
+  test:
+    name: 'Updating Screenshot baselines for ${{ matrix.runner }}'
+    if: ${{ inputs.updateHostScreenshots }}
+    timeout-minutes: 15
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: write
+    env:
+      RUNNER: ${{ matrix.runner }} # adds test tag
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        # runner: [ ubuntu-24.04 ]
+        runner: [ windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
+    steps:
+    - name: Checkout branch (${{ github.ref_name }}) # Need to checkout ref to use git
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.ref }}
+        repository: ${{ github.event.repository.full_name }}
+
+    - name: Dump github context
+      env:
+        JSON_DUMP: ${{ toJson(github) }}
+      run: echo "$JSON_DUMP"
+    - name: Dump job context
+      env:
+        JSON_DUMP: ${{ toJson(job) }}
+      run: echo "$JSON_DUMP"
+    - name: Dump runner context
+      env:
+        JSON_DUMP: ${{ toJson(runner) }}
+      run: echo "$JSON_DUMP"
+    - name: Dump strategy context
+      env:
+        JSON_DUMP: ${{ toJson(strategy) }}
+      run: echo "$JSON_DUMP"
+    - name: Print environment variables
+      run: printenv
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install main dependencies
+      run: npm ci --ignore-scripts
+    - name: Install react-app dependencies
+      working-directory: demo-sites/simple-react-app
+      run: npm ci
+    - name: Install Playwright Browser
+      run: npm run playwright:install
+    - name: Run Playwright tests
+      run: npm test -- --update-snapshots=${{ inputs.updateMode }}
+
+    - run: ls
+    - run: ls e2e
+    - run: ls e2e/runner-screenshots
+    - run: ls e2e/runner-screenshots/host
+    - run: ls e2e/runner-screenshots/host/${{ matrix.runner }}
+
+    - name: Verify Changed files
+      continue-on-error: true
+      uses: tj-actions/verify-changed-files@v20
+      id: changed-files
+      with:
+        files: |
+          e2e/runner-screenshots/host/${{ matrix.runner }}/**/*.png
+    - name: Commit and Push updated screenshots to ${{ github.ref_name }}
+      if: ${{ steps.changed-files.outputs.files_changed == 'true' }}
+      uses: EndBug/add-and-commit@v9
+      with:
+        message: Update runner screenshots for `${{ matrix.runner }}`
+        add: e2e/runner-screenshots/host/${{ matrix.runner }}/**/*.png
+        default_author: github_actions
+
+  test-docker:
+    name: 'Updating Screenshot baselines for ${{ matrix.runner }} (docker)'
+    needs: test
+    if: ${{ !failure() && inputs.updateDockerScreenshots }}
+    timeout-minutes: 15
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: write
+    env:
+      DOCKER: true # adds test tag
+      RUNNER: ${{ matrix.runner }} # adds test tag
+      JOB_INDEX: ${{ strategy.job-index }} # to name blob report
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
+    container:
+      image: mcr.microsoft.com/playwright:v1.51.1-noble
+      options: --user 1001 # set user to pwuser, needed for firebase
+    steps:
+    - name: Checkout branch (${{ github.ref_name }}) # Need to checkout ref to use git
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.ref }}
+        repository: ${{ github.event.repository.full_name }}
+
+    - name: Dump github context
+      env:
+        JSON_DUMP: ${{ toJson(github) }}
+      run: echo "$JSON_DUMP"
+    - name: Dump job context
+      env:
+        JSON_DUMP: ${{ toJson(job) }}
+      run: echo "$JSON_DUMP"
+    - name: Dump runner context
+      env:
+        JSON_DUMP: ${{ toJson(runner) }}
+      run: echo "$JSON_DUMP"
+    - name: Dump strategy context
+      env:
+        JSON_DUMP: ${{ toJson(strategy) }}
+      run: echo "$JSON_DUMP"
+    - name: Print environment variables
+      run: printenv
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install main dependencies
+      run: npm ci --ignore-scripts
+    - name: Install react-app dependencies
+      working-directory: demo-sites/simple-react-app
+      run: npm ci
+    - name: Run Playwright tests
+      run: npm test -- --update-snapshots=${{ inputs.updateMode }}
+
+    - run: ls
+    - run: ls e2e
+    - run: ls e2e/runner-screenshots
+    - run: ls e2e/runner-screenshots/docker
+    - run: ls e2e/runner-screenshots/docker/${{ matrix.runner }}
+
+    - name: Verify Changed files
+      continue-on-error: true
+      uses: tj-actions/verify-changed-files@v20
+      id: changed-files
+      with:
+        files: |
+          e2e/runner-screenshots/docker/${{ matrix.runner }}/**/*.png
+    - name: Commit and Push updated screenshots to ${{ github.ref_name }}
+      if: ${{ steps.changed-files.outputs.files_changed == 'true' }}
+      uses: EndBug/add-and-commit@v9
+      with:
+        message: Update runner screenshots for `${{ matrix.runner }}`
+        add: e2e/runner-screenshots/docker/${{ matrix.runner }}/**/*.png
+        default_author: github_actions
+
