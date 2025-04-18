@@ -13,15 +13,14 @@ export const arch = os.arch();
 export const platformArch = `${platform}/${arch}`
 
 export const testTags = [
-  // `@${platformArch}`,
   `@${platform}`,
   `@${arch}`,
+  `@comparator:${comparator || 'default' }`,
   ...(runner ? [`@${runner}`] : []),
   ...(inDocker ? ['@docker'] : []),
-  ...(comparator ? [`@comparator:${comparator}`] : []),
 ]
 
-export const reportOutputFile = `e2e/reports/blob-report-${inDocker ? 'docker-' : ''}${jobIndex}.zip`
+export const reportOutputFile = `e2e/reports/blob-report-${inDocker ? 'docker-' : ''}${comparator ? `${comparator}-` : ''}${jobIndex}.zip`
 
 const platformPath = platformAgnostic ? '' : '-{platform}'
 const hostDir = inDocker ? 'docker' : 'host';
