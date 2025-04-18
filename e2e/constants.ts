@@ -5,7 +5,7 @@ type Runner = 'ubuntu-24.04' |'windows-2025' |'ubuntu-24.04-arm' |'macos-13' |'m
 const runner = process.env.RUNNER as Runner;
 const inDocker = process.env.DOCKER === 'true';
 const jobIndex = Number(process.env.JOB_INDEX || 0) + 1;
-const platformAgnostic = process.env.PLATFORM_AGNOSTIC === 'true';
+const platformAgnostic = process.env.PLATFORM_AGNOSTIC !== 'false';
 
 export const platform = os.platform();
 export const arch = os.arch();
