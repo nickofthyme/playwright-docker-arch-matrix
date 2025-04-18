@@ -46,6 +46,7 @@ jobs:
       contents: write
     env:
       RUNNER: ${{ matrix.runner }} # adds test tag
+      COMPARATOR: ${{ matrix.comparator }} # adds test tag and sets _comparator
     strategy:
       fail-fast: false
       matrix:
@@ -56,6 +57,7 @@ jobs:
             browser: firefox
           - name: Webkit
             browser: webkit
+        comparator: [ ssim-cie94, null ]
         runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
         exclude:
           - runner: windows-2025
@@ -114,6 +116,7 @@ jobs:
     env:
       DOCKER: true # adds test tag
       RUNNER: ${{ matrix.runner }} # adds test tag
+      COMPARATOR: ${{ matrix.comparator }} # adds test tag and sets _comparator
       JOB_INDEX: ${{ strategy.job-index }} # to name blob report
     strategy:
       fail-fast: false
@@ -126,6 +129,7 @@ jobs:
             browser: firefox
           - name: Webkit
             browser: webkit
+        comparator: [ ssim-cie94, null ]
         runner: [ ubuntu-24.04, ubuntu-24.04-arm ]
     container:
       image: mcr.microsoft.com/playwright:v1.51.1-noble

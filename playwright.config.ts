@@ -1,6 +1,6 @@
 import { defineConfig, devices, ReporterDescription } from '@playwright/test';
 import { baseURL } from './demo-sites/constants';
-import { reportOutputFile, pathTemplate, platform } from './e2e/constants';
+import { reportOutputFile, pathTemplate, platform, comparator } from './e2e/constants';
 
 const CI = process.env.CI === 'true';
 
@@ -44,6 +44,10 @@ export default defineConfig({
       maxDiffPixels: 0,
       animations: "disabled",
       pathTemplate,
+      ...(comparator ? {
+        // adds experimental comparator
+        _comparator: comparator,
+      } : {})
     },
   },
 
