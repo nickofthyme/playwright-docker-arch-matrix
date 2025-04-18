@@ -34,17 +34,19 @@ on:
 env:
   CI: true
   NODE_VERSION: lts/*
+  UPDATE_MODE: ${{ inputs.updateMode || 'none' }}
 
 jobs:
   test:
-    name: 'Screenshot testing - ${{ matrix.runner }} - ${{ matrix.project.name }}'
+    name: 'Screenshot testing - ${{ matrix.runner }} - ${{ matrix.project.name }} - ${{ matrix.comparator.name }}'
     if: ${{ inputs.runHostTests }}
-    timeout-minutes: 15
+    timeout-minutes: 30
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
     env:
       RUNNER: ${{ matrix.runner }} # adds test tag
+      COMPARATOR: ${{ matrix.comparator.type }} # adds test tag and sets _comparator
     strategy:
       fail-fast: false
       matrix:
@@ -55,6 +57,11 @@ jobs:
             browser: firefox
           - name: Webkit
             browser: webkit
+        comparator:
+          - name: ssim-cie94
+            type: ssim-cie94
+          - name: Default
+            type: null
         runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
         exclude:
           - runner: windows-2025
@@ -83,8 +90,6 @@ jobs:
       env:
         JSON_DUMP: ${{ toJson(strategy) }}
       run: echo "$JSON_DUMP"
-    - name: Print environment variables
-      run: printenv
 
     - name: Install main dependencies
       run: npm ci --ignore-scripts
@@ -94,25 +99,26 @@ jobs:
     - name: Install Playwright Browser (${{ matrix.project.browser }})
       run: npm run playwright:install -- ${{ matrix.project.browser }}
     - name: Run Playwright tests
-      run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ inputs.updateMode }}
+      run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ env.UPDATE_MODE }}
 
     - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}
       uses: actions/upload-artifact@v4
       with:
-        name: blob-report-${{ matrix.runner }}-${{ matrix.project.browser }}
+        name: blob-report-${{ matrix.runner }}-${{ matrix.project.browser }}-${{ matrix.comparator.type }}
         path: e2e/reports/blob-report-*.zip
         retention-days: 1
 
   test-docker:
-    name: 'Screenshot testing - Docker - ${{ matrix.runner }} - ${{ matrix.project.name }}'
-    timeout-minutes: 15
+    name: 'Screenshot testing - Docker - ${{ matrix.runner }} - ${{ matrix.project.name }} - ${{ matrix.comparator.name }}'
+    timeout-minutes: 30
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
     env:
       DOCKER: true # adds test tag
       RUNNER: ${{ matrix.runner }} # adds test tag
+      COMPARATOR: ${{ matrix.comparator.type }} # adds test tag and sets _comparator
       JOB_INDEX: ${{ strategy.job-index }} # to name blob report
     strategy:
       fail-fast: false
@@ -125,6 +131,11 @@ jobs:
             browser: firefox
           - name: Webkit
             browser: webkit
+        comparator:
+          - name: ssim-cie94
+            type: ssim-cie94
+          - name: Default
+            type: null
         runner: [ ubuntu-24.04, ubuntu-24.04-arm ]
     container:
       image: mcr.microsoft.com/playwright:v1.51.1-noble
@@ -160,8 +171,6 @@ jobs:
       env:
         JSON_DUMP: ${{ toJson(strategy) }}
       run: echo "$JSON_DUMP"
-    - name: Print environment variables
-      run: printenv
 
     - name: Install main dependencies
       run: npm ci --ignore-scripts
@@ -169,13 +178,13 @@ jobs:
       working-directory: demo-sites/simple-react-app
       run: npm ci --force # ignore elastic-charts dep error
     - name: Run Playwright tests
-      run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ inputs.updateMode }}
+      run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ env.UPDATE_MODE }}
 
     - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}
       uses: actions/upload-artifact@v4
       with:
-        name: blob-report-docker-${{ matrix.runner }}-${{ matrix.project.browser }}
+        name: blob-report-docker-${{ matrix.runner }}-${{ matrix.project.browser }}-${{ matrix.comparator.type }}
         path: e2e/reports/blob-report-*.zip
         retention-days: 1
 
