@@ -6,6 +6,7 @@ const runner = process.env.RUNNER as Runner;
 const inDocker = process.env.DOCKER === 'true';
 const jobIndex = Number(process.env.JOB_INDEX || 0) + 1;
 const platformAgnostic = process.env.PLATFORM_AGNOSTIC !== 'false';
+export const comparator = (process.env.COMPARATOR && process.env.COMPARATOR !== 'null') ? process.env.COMPARATOR : null;
 
 export const platform = os.platform();
 export const arch = os.arch();
@@ -17,6 +18,7 @@ export const testTags = [
   `@${arch}`,
   ...(runner ? [`@${runner}`] : []),
   ...(inDocker ? ['@docker'] : []),
+  ...(comparator ? [`@comparator:${comparator}`] : []),
 ]
 
 export const reportOutputFile = `e2e/reports/blob-report-${inDocker ? 'docker-' : ''}${jobIndex}.zip`

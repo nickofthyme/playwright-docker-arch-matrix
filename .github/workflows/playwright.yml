@@ -34,6 +34,7 @@ on:
 env:
   CI: true
   NODE_VERSION: lts/*
+  UPDATE_MODE: ${{ inputs.updateMode || 'none' }}
 
 jobs:
   test:
@@ -45,6 +46,7 @@ jobs:
       contents: write
     env:
       RUNNER: ${{ matrix.runner }} # adds test tag
+      COMPARATOR: ${{ matrix.comparator }} # adds test tag and sets _comparator
     strategy:
       fail-fast: false
       matrix:
@@ -55,6 +57,7 @@ jobs:
             browser: firefox
           - name: Webkit
             browser: webkit
+        comparator: [ ssim-cie94, null ]
         runner: [ ubuntu-24.04, windows-2025, ubuntu-24.04-arm, macos-13, macos-15 ]
         exclude:
           - runner: windows-2025
@@ -94,7 +97,7 @@ jobs:
     - name: Install Playwright Browser (${{ matrix.project.browser }})
       run: npm run playwright:install -- ${{ matrix.project.browser }}
     - name: Run Playwright tests
-      run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ inputs.updateMode }}
+      run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ env.UPDATE_MODE }}
 
     - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}
@@ -113,6 +116,7 @@ jobs:
     env:
       DOCKER: true # adds test tag
       RUNNER: ${{ matrix.runner }} # adds test tag
+      COMPARATOR: ${{ matrix.comparator }} # adds test tag and sets _comparator
       JOB_INDEX: ${{ strategy.job-index }} # to name blob report
     strategy:
       fail-fast: false
@@ -125,6 +129,7 @@ jobs:
             browser: firefox
           - name: Webkit
             browser: webkit
+        comparator: [ ssim-cie94, null ]
         runner: [ ubuntu-24.04, ubuntu-24.04-arm ]
     container:
       image: mcr.microsoft.com/playwright:v1.51.1-noble
@@ -169,7 +174,7 @@ jobs:
       working-directory: demo-sites/simple-react-app
       run: npm ci --force # ignore elastic-charts dep error
     - name: Run Playwright tests
-      run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ inputs.updateMode }}
+      run: npm test -- --project=${{ matrix.project.browser }} --update-snapshots=${{ env.UPDATE_MODE }}
 
     - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}

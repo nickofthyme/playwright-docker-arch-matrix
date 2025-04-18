@@ -46,7 +46,7 @@ export function Chart() {
       <Axis id="bottom" position={Position.Bottom} />
       <Axis id="left" position={Position.Left} />
 
-      {new Array(4).fill(0).map((v, i) => (
+      {new Array(4).fill(0).map((_, i) => (
         <BarSeries
           key={i}
           barSeriesStyle={{
