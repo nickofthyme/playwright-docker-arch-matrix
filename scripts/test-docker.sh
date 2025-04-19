@@ -22,6 +22,7 @@ docker run \
   -e PORT \
   -e HOST \
   -w /app `# working directory` \
+  --user pwuser \
   -v $(pwd)/:/app `# mount local / directory in app/ directory in container` \
   mcr.microsoft.com/playwright:v1.51.1-noble \
   npm test -- "$@" # forward any additional passed args
